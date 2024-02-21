@@ -39,6 +39,9 @@ class DAC:
             baud (int): Baud rate for the serial communication.
         """
         self._port = serial.Serial(port, baud)
+        # Reset all channels
+        for ch in range(1, 7):
+            self.set_volt(ch, 0)
 
     def write(self, data: bytes):
         """Write data to the DAC.
