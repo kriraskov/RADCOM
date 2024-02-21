@@ -3,8 +3,9 @@ import pyvisa
 
 class Instrument:
     """Generic VISA instrument."""
-    def __init__(self, resource, query_delay=0,
-                 write_termination='\r\n', read_termination='\r\n'):
+    def __init__(self, resource: str, query_delay: float = 0.,
+                 write_termination: str = '\r',
+                 read_termination: str = '\r'):
         """Instrument constructor.
 
         Initialize the resources need to remotely control an instrument
@@ -33,7 +34,7 @@ class Instrument:
         self._resource.query_delay = query_delay
         print(self._resource.query("*IDN?"))
 
-    def write(self, cmd):
+    def write(self, cmd: str):
         """Write command to instrument.
 
         Writes the specified command and waits for the
@@ -56,7 +57,7 @@ class Instrument:
         """
         return self._resource.read()
 
-    def query(self, cmd):
+    def query(self, cmd: str):
         """Query command.
 
         Writes the specified command to the instrument, reads
@@ -81,17 +82,19 @@ class Instrument:
         
 
 class Fluke45(Instrument):
-    def __init__(self, resource, query_delay=0):
+    def __init__(self, resource: str, query_delay: float = 0):
         """FLUKE 45 constructor.
 
         Args:
             resource (str): Address of resource to initialize.
             query_delay (float): Delay between write and read in query
+                commands.
         """
-        super().__init__(resource, query_delay)
+        super().__init__(resource, query_delay, write_termination='\r\n',
+                         read_termination='\r\n')
         self.write("*RST;*CLS;TRIG 3")
 
-    def query(self, cmd):
+    def query(self, cmd: str):
         """Query command.
 
         Writes the specified command to the instrument, reads
@@ -109,7 +112,8 @@ class Fluke45(Instrument):
         self.read()
         return val
 
-    def setup(self, units, rate, meas_range, show_units=False):
+    def setup(self, units: str, rate: str, meas_range: int,
+              show_units: bool = False):
         """Setup the instrument.
 
         Args:
