@@ -1,9 +1,8 @@
 import time
-
 import serial
 
 
-def modbus_crc16(data, poly=0xA001):
+def modbus_crc16(data: bytes, poly: int = 0xA001):
     """Modbus CRC16.
 
     Generate a 16-bit CRC (Modbus) code for a given byte string.
@@ -31,19 +30,18 @@ def modbus_crc16(data, poly=0xA001):
 class DAC:
     """DAC class.
 
-    Attributes:
-        port (pyserial.Serial): Serial port of the DAC.
+    The DAC is a mystery box. No datasheet available.
     """
-    def __init__(self, port, baud=9600, timeout=1.):
+    def __init__(self, port: str, baud: int = 9600):
         """DAC constructor.
 
         Args:
             port (str): Serial port of the DAC.
             baud (int): Baud rate for the serial communication.
         """
-        self.port = serial.Serial(port, baud)
+        self._port = serial.Serial(port, baud)
 
-    def write(self, data):
+    def write(self, data: bytes):
         """Write data to the DAC.
 
         Sends a write command (`b'\x01\x06'`) followed by a byte string
@@ -55,16 +53,16 @@ class DAC:
         """
         msg = b'\x01\x06' + data
         crc = modbus_crc16(msg).to_bytes(2, 'little')
-        self.port.write(list(msg + crc))
+        self._port.write(list(msg + crc))
 
     def close(self):
         """Close the serial port.
 
         Wrapper method for `pyserial.Serial.close()`.
         """
-        self.port.close()
+        self._port.close()
 
-    def set_volt(self, channel, volt):
+    def set_volt(self, channel: int, volt: int):
         """Set the output voltage of the DAC.
 
         Updates the output voltage of the specified channel.
