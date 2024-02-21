@@ -12,8 +12,7 @@ def sweep_dac_volt(dmm_resource, dac_port, dac_channel, sweep_volt,
     dmm = Fluke45(dmm_resource)
     dmm.setup("VDC", dmm_rate, dmm_range)
     dac = DAC(dac_port)
-    dac.set_volt(dac_channel, 0)
-    time.sleep(1)
+    time.sleep(1)       # Make sure all channels are ready
     for volt in sweep_volt:
         dac.set_volt(dac_channel, volt)
         readings.append(dmm.read_val())
@@ -23,14 +22,10 @@ def sweep_dac_volt(dmm_resource, dac_port, dac_channel, sweep_volt,
 
 if __name__ == "__main__":
     sweep = range(0, 8000, 1)
-    dac_volt = sweep_dac_volt('ASRL7::INSTR', 'COM5', 1, sweep)
+    t0 = time.time()
+    dac_volt = sweep_dac_volt('ASRL7::INSTR', 'COM5', 4, sweep)
+    print("Measurement finished in " + str(time.time() - t0) + "s")
 
-    with open('dac_ch1_twisted.csv', 'w') as file:
+    with open('dac_ch4.csv', 'w') as file:
         wr = csv.writer(file)
-        wr.writerow(dac_volt)
-
-    plt_data = np.genfromtxt("dac_ch1.csv", delimiter=',')
-    plt.plot(np.array(sweep) / 1000, plt_data)
-    plt.xlabel("Input Voltage")
-    plt.ylabel("Output Voltage")
-    plt.show()
+        wr.writerows([np.array(sweep) / 1000, dac_volt])
