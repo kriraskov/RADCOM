@@ -1,4 +1,3 @@
-import time
 import serial
 
 
@@ -77,15 +76,3 @@ class DAC:
         chl = (channel + 0x09) & 0xFF           # 0x0A for channel 1, etc.
         val = volt.to_bytes(2, 'big')           # b'\xVV\xVV'
         self.write(bytes([0x00, chl]) + val)    # b'\x00\x0X\xVV\xVV'
-
-
-if __name__ == "__main__":
-    dac = DAC('COM5')
-    while True:
-        #dac.set_volt(1, 0)
-        dac.set_volt(2, 0)
-        time.sleep(0.1)
-        #dac.set_volt(1, 1000)
-        dac.set_volt(2, 1000)
-        time.sleep(0.1)
-    dac.close()
