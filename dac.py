@@ -65,8 +65,8 @@ class DAC:
         """Set the output voltage of the DAC.
 
         Updates the output voltage of the specified channel. The write
-        message is b'\x01\x06\x00\x0X\xVV\xVV', where b'\x0X' is b'\x0A'
-        for channel 1, b'\x0B' for channel 2, etc, and b'\xVV\xVV' is
+        message is 0x01 0x06 0x00 0x0X 0xVV 0xVV, where 0x0X is 0x0A
+        for channel 1, 0x0B for channel 2, etc, and 0xVV 0xVV is
         the hexadecimal representation of the voltage.
 
         Args:

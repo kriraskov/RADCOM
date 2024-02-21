@@ -25,7 +25,7 @@ if __name__ == "__main__":
     sweep = range(0, 8000, 1)
     dac_volt = sweep_dac_volt('ASRL7::INSTR', 'COM5', 1, sweep)
 
-    with open('dac_ch1.csv', 'w') as file:
+    with open('dac_ch1_twisted.csv', 'w') as file:
         wr = csv.writer(file)
         wr.writerow(dac_volt)
 
