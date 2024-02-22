@@ -83,7 +83,7 @@ class Instrument:
         
 
 class Fluke45(Instrument):
-    def __init__(self, resource_name: str, query_delay: float = 0):
+    def __init__(self, resource_name: str, query_delay: float = 0.):
         """FLUKE 45 constructor.
 
         Args:
@@ -141,11 +141,12 @@ class Fluke45(Instrument):
 
 
 class HP34401A(Instrument):
-    def __init__(self, resource_name, query_delay=0, timeout=0):
+    def __init__(self, resource_name: str, query_delay: float = 0.,
+                 timeout: float = 0.):
         super().__init__(resource_name, query_delay, timeout)
         self._resource.write("SYST:REM")
 
-    def setup(self, units, meas_range, resolution="DEF"):
+    def setup(self, units: str, meas_range: int, resolution: str = "DEF"):
         self.write("CONF:" + units + " " + str(meas_range) + "," + resolution)
         print("=== HP34401A: " + units + " MEASUREMENT ===")
         print(self.query("CONF?"))
