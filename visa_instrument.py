@@ -3,9 +3,9 @@ import pyvisa
 
 class Instrument:
     """Generic VISA instrument."""
-    def __init__(self, resource: str, query_delay: float = 0.,
-                 write_termination: str = '\r',
-                 read_termination: str = '\r'):
+    def __init__(self, resource_name: str, query_delay: float = 0.,
+                 timeout: float = 0., write_termination: str = '\n',
+                 read_termination: str = '\n'):
         """Instrument constructor.
 
         Initialize the resources need to remotely control an instrument
@@ -20,7 +20,7 @@ class Instrument:
             >>> inst = Instrument('ASRL7::INSTR')
 
         Args:
-            resource (str): Address of resource to initialize.
+            resource_name (str): Address of resource to initialize.
             query_delay (float): Delay between write and read in query
                 commands.
             write_termination (str): Input terminator for write
@@ -28,11 +28,12 @@ class Instrument:
             read_termination (str): Output terminator for read commands.
         """
         self._rm = pyvisa.ResourceManager()
-        self._resource = self._rm.open_resource(resource)
+        self._resource = self._rm.open_resource(resource_name)
         self._resource.read_termination = read_termination
         self._resource.write_termination = write_termination
         self._resource.query_delay = query_delay
-        print(self._resource.query("*IDN?"))
+        self._resource.timeout = timeout
+        print(self._resource.query("*RST;*CLS;*IDN?"))
 
     def write(self, cmd: str):
         """Write command to instrument.
@@ -82,17 +83,17 @@ class Instrument:
         
 
 class Fluke45(Instrument):
-    def __init__(self, resource: str, query_delay: float = 0):
+    def __init__(self, resource_name: str, query_delay: float = 0):
         """FLUKE 45 constructor.
 
         Args:
-            resource (str): Address of resource to initialize.
+            resource_name (str): Address of resource to initialize.
             query_delay (float): Delay between write and read in query
                 commands.
         """
-        super().__init__(resource, query_delay, write_termination='\r\n',
+        super().__init__(resource_name, query_delay, write_termination='\r\n',
                          read_termination='\r\n')
-        self.write("*RST;*CLS;TRIG 3")
+        self.write("TRIG 3")
 
     def query(self, cmd: str):
         """Query command.
@@ -112,15 +113,13 @@ class Fluke45(Instrument):
         self.read()
         return val
 
-    def setup(self, units: str, rate: str, meas_range: int,
-              show_units: bool = False):
+    def setup(self, units: str, rate: str, meas_range: int):
         """Setup the instrument.
 
         Args:
             units (str):
             rate (str):
             meas_range (int):
-            show_units (bool):
         """
         self.write(units)
         print("=== FLUKE 45: " + units + " MEASUREMENT ===")
@@ -128,13 +127,12 @@ class Fluke45(Instrument):
         print("RANGE:  " + self.query("RANGE1?"))
         self.write("RATE " + rate)
         print("RATE:   " + self.query("RATE?"))
-        self.write("FORMAT " + str(2 if show_units else 1))
-        print("FORMAT: " + self.query("FORMAT?"))
 
-    def read_val(self):
-        """Read measured value.
+    def measure(self):
+        """Trigger and read a measurement.
 
-        Queries the instrument for the measured value.
+        Triggers the instrument for a measurement and queries the
+        measured value.
 
         Returns:
             str: The value on the primary display.
@@ -142,9 +140,24 @@ class Fluke45(Instrument):
         return self.query("*TRG;VAL1?")
 
 
+class HP34401A(Instrument):
+    def __init__(self, resource_name, query_delay=0, timeout=0):
+        super().__init__(resource_name, query_delay, timeout)
+        self._resource.write("SYST:REM")
+        #print(self._resource.query("*IDN?"))
+        #self._resource.read()
+        #self.write("*RST;*CLS")
+
+    def setup(self, units, meas_range, resolution="DEF"):
+        self.write("CONF:" + units + " " + str(meas_range) + "," + resolution)
+        print("=== HP34401A: " + units + " MEASUREMENT ===")
+        print(self.query("CONF?"))
+
+    def measure(self):
+        return
+
+
 if __name__ == "__main__":
-    f45 = Fluke45('ASRL7::INSTR')
-    f45.setup("VDC", "S", 3)
-    
-    for _ in range(0, 5):
-        print(f45.read_val())
+    hp = HP34401A('ASRL7::INSTR', query_delay=2, timeout=10000)
+    # f45 = Fluke45('ASRL7::INSTR')
+    # hp.setup("VOLT:DC", 10, "MIN")
