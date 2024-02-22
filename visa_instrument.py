@@ -144,9 +144,6 @@ class HP34401A(Instrument):
     def __init__(self, resource_name, query_delay=0, timeout=0):
         super().__init__(resource_name, query_delay, timeout)
         self._resource.write("SYST:REM")
-        #print(self._resource.query("*IDN?"))
-        #self._resource.read()
-        #self.write("*RST;*CLS")
 
     def setup(self, units, meas_range, resolution="DEF"):
         self.write("CONF:" + units + " " + str(meas_range) + "," + resolution)
@@ -159,5 +156,3 @@ class HP34401A(Instrument):
 
 if __name__ == "__main__":
     hp = HP34401A('ASRL7::INSTR', query_delay=2, timeout=10000)
-    # f45 = Fluke45('ASRL7::INSTR')
-    # hp.setup("VOLT:DC", 10, "MIN")
