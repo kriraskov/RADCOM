@@ -3,13 +3,13 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from dac import DAC
-from visa_instrument import Fluke45
+from visa_instrument import FLUKE45
 
 
 def sweep_dac_volt(dmm_resource, dac_port, dac_channel, sweep_volt,
                    dmm_rate="S", dmm_range=3):
     readings = list()
-    dmm = Fluke45(dmm_resource)
+    dmm = FLUKE45(dmm_resource)
     dmm.setup("VDC", dmm_rate, dmm_range)
     dac = DAC(dac_port)
     time.sleep(1)       # Make sure all channels are ready

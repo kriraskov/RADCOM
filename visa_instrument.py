@@ -1,8 +1,15 @@
 import pyvisa
 
+FUNCTIONS = {'AAC': 'CURR:AC', 'CURR:AC': 'CURR:AC', 'ADC': 'CURR:DC',
+             'CURR:DC': 'CURR:DC', 'CONT': 'CONT', 'DIODE': 'DIOD',
+             'DIOD': 'DIOD', 'FREQ': 'FREQ', 'OHMS': 'RES', 'RES': 'RES',
+             'VAC': 'VOLT:AC', 'VOLT:AC': 'VOLT:AC', 'VDC': 'VOLT:DC',
+             'VOLT:DC': 'VOLT:DC'}
+
 
 class Instrument:
     """Generic VISA instrument."""
+
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: float = 0., write_termination: str = '\n',
                  read_termination: str = '\n'):
@@ -23,6 +30,7 @@ class Instrument:
             resource_name (str): Address of resource to initialize.
             query_delay (float): Delay between write and read in query
                 commands.
+            timeout (float): Time before read commands abort.
             write_termination (str): Input terminator for write
                 commands.
             read_termination (str): Output terminator for read commands.
@@ -33,19 +41,20 @@ class Instrument:
         self._resource.write_termination = write_termination
         self._resource.query_delay = query_delay
         self._resource.timeout = timeout
-        print(self._resource.query("*RST;*CLS;*IDN?"))
+        # Reset; clear status register; enable OPC; enable std event
+        print(self._resource.query('*RST;*CLS;*ESE 1;*SRE 32;*IDN?'))
 
     def write(self, cmd: str):
         """Write command to instrument.
 
-        Writes the specified command and waits for the
-        instrument to complete the execution by reading the
-        OPC status register.
+        Writes the specified command and waits for the instrument to
+        complete the execution by reading the OPC status register. Don't
+        write query commands with this method.
 
         Args:
             cmd (str): Command to write
         """
-        self.query(cmd + ";*OPC?")
+        self.query(cmd + ';*OPC?')
 
     def read(self):
         """Read output from instrument.
@@ -80,20 +89,22 @@ class Instrument:
         `pyvisa.resources.Resource.close()`
         """
         self._resource.close()
-        
 
-class Fluke45(Instrument):
-    def __init__(self, resource_name: str, query_delay: float = 0.):
+
+class FLUKE45(Instrument):
+    def __init__(self, resource_name: str, query_delay: float = 0.,
+                 timeout: float = 0.):
         """FLUKE 45 constructor.
 
         Args:
             resource_name (str): Address of resource to initialize.
             query_delay (float): Delay between write and read in query
                 commands.
+            timeout (float): Time before read commands abort.
         """
-        super().__init__(resource_name, query_delay, write_termination='\r\n',
-                         read_termination='\r\n')
-        self.write("TRIG 3")
+        super().__init__(resource_name, query_delay, timeout,
+                         write_termination='\r\n', read_termination='\r\n')
+        self.write('TRIG 3')
 
     def query(self, cmd: str):
         """Query command.
@@ -113,20 +124,24 @@ class Fluke45(Instrument):
         self.read()
         return val
 
-    def setup(self, units: str, rate: str, meas_range: int):
+    def setup(self, func: str, meas_rate: str, meas_range: int):
         """Setup the instrument.
 
         Args:
-            units (str):
-            rate (str):
-            meas_range (int):
+            func (str): DMM function. See the FLUKE 45 manual for a list
+                of available functions.
+            meas_rate (str): Measurement rate (`'S'`, `'M'`, or `'F'`).
+                Determines the integration time of the ADC.
+            meas_range (int): Measurement range. Se the FLUKE 45 manual
+                for a list of available ranges.
         """
-        self.write(units)
-        print("=== FLUKE 45: " + units + " MEASUREMENT ===")
-        self.write("RANGE " + str(meas_range))
-        print("RANGE:  " + self.query("RANGE1?"))
-        self.write("RATE " + rate)
-        print("RATE:   " + self.query("RATE?"))
+        self.write(func)
+        print('=== FLUKE 45: ' + func + ' MEASUREMENT ===')
+        if func not in ('CONT', 'DIODE'):
+            self.write('RANGE ' + str(meas_range))
+            print('RANGE:  ' + self.query('RANGE1?'))
+            self.write('RATE ' + meas_rate)
+            print('RATE:   ' + self.query('RATE?'))
 
     def measure(self):
         """Trigger and read a measurement.
@@ -137,23 +152,48 @@ class Fluke45(Instrument):
         Returns:
             str: The value on the primary display.
         """
-        return self.query("*TRG;VAL1?")
+        return self.query('*TRG;VAL1?')
 
 
 class HP34401A(Instrument):
+    """HP/Agilent 34401A constructor.
+
+    Args:
+        resource_name (str): Address of resource to initialize.
+        query_delay (float): Delay between write and read in query
+            commands.
+        timeout (float): Time before read commands abort.
+    """
+
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: float = 0.):
         super().__init__(resource_name, query_delay, timeout)
-        self._resource.write("SYST:REM")
+        self.write('SYST:REM')
 
-    def setup(self, units: str, meas_range: int, resolution: str = "DEF"):
-        self.write("CONF:" + units + " " + str(meas_range) + "," + resolution)
-        print("=== HP34401A: " + units + " MEASUREMENT ===")
-        print(self.query("CONF?"))
+    def setup(self, func: str, meas_rate: str = 10, meas_range: str = 'MAX'):
+        """Setup the instrument.
+
+        Args:
+            func (str): DMM function. See the 34401A user guide for a
+                list of available functions.
+            meas_rate:  Integration time in number of power line cycles
+                (0.02, 0.2, 1, 10, or 100).
+            meas_range: Measurement range. Se the 34401A user guide for
+                a list of available ranges.
+        """
+        self.write('FUNC "' + FUNCTIONS[func] + '"')
+        print('=== HP34401A: ' + FUNCTIONS[func] + ' MEASUREMENT ===')
+        if FUNCTIONS[func] not in ('CONT', 'DIOD'):
+            self.write(FUNCTIONS[func] + ':NPLC ' + str(meas_rate))
+            print('RATE:   ' + self.query(FUNCTIONS[func] + ':NPLC?'))
+            self.write(FUNCTIONS[func] + ':RANG ' + str(meas_range))
+            print('RANGE:  ' + self.query(FUNCTIONS[func] + ':RANG?'))
 
     def measure(self):
         return
 
 
-if __name__ == "__main__":
-    hp = HP34401A('ASRL7::INSTR', query_delay=2, timeout=10000)
+if __name__ == '__main__':
+    hp = HP34401A('ASRL6::INSTR', timeout=5000)
+    hp.setup('VDC', 10, 'MAX')
+
