@@ -104,7 +104,7 @@ class FLUKE45(Instrument):
         """
         super().__init__(resource_name, query_delay, timeout,
                          write_termination='\r\n', read_termination='\r\n')
-        self.write('TRIG 3')
+        self.write('TRIG 3')    # External trigger with settling delay.
 
     def query(self, cmd: str):
         """Query command.
@@ -124,7 +124,7 @@ class FLUKE45(Instrument):
         self.read()
         return val
 
-    def setup(self, func: str, meas_rate: str, meas_range: int):
+    def setup(self, func: str, meas_rate: str, meas_range: str):
         """Setup the instrument.
 
         Args:
@@ -132,13 +132,13 @@ class FLUKE45(Instrument):
                 of available functions.
             meas_rate (str): Measurement rate (`'S'`, `'M'`, or `'F'`).
                 Determines the integration time of the ADC.
-            meas_range (int): Measurement range. Se the FLUKE 45 manual
+            meas_range (str): Measurement range. Se the FLUKE 45 manual
                 for a list of available ranges.
         """
         self.write(func)
         print('=== FLUKE 45: ' + func + ' MEASUREMENT ===')
         if func not in ('CONT', 'DIODE'):
-            self.write('RANGE ' + str(meas_range))
+            self.write('RANGE ' + meas_range)
             print('RANGE:  ' + self.query('RANGE1?'))
             self.write('RATE ' + meas_rate)
             print('RATE:   ' + self.query('RATE?'))
@@ -168,32 +168,42 @@ class HP34401A(Instrument):
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: float = 0.):
         super().__init__(resource_name, query_delay, timeout)
-        self.write('SYST:REM')
+        self.write('SYST:REM')          # Remote operation
+        self.write('TRIG:SOUR IMM')     # Internal trigger
 
-    def setup(self, func: str, meas_rate: str = 10, meas_range: str = 'MAX'):
+    def setup(self, func: str, meas_rate: str = '10', meas_range: str = 'MAX'):
         """Setup the instrument.
 
         Args:
             func (str): DMM function. See the 34401A user guide for a
                 list of available functions.
-            meas_rate:  Integration time in number of power line cycles
+            meas_rate (str):  Integration time in number of power line cycles
                 (0.02, 0.2, 1, 10, or 100).
-            meas_range: Measurement range. Se the 34401A user guide for
+            meas_range (str): Measurement range. Se the 34401A user guide for
                 a list of available ranges.
         """
         self.write('FUNC "' + FUNCTIONS[func] + '"')
         print('=== HP34401A: ' + FUNCTIONS[func] + ' MEASUREMENT ===')
         if FUNCTIONS[func] not in ('CONT', 'DIOD'):
-            self.write(FUNCTIONS[func] + ':NPLC ' + str(meas_rate))
+            self.write(FUNCTIONS[func] + ':NPLC ' + meas_rate)
             print('RATE:   ' + self.query(FUNCTIONS[func] + ':NPLC?'))
-            self.write(FUNCTIONS[func] + ':RANG ' + str(meas_range))
+            self.write(FUNCTIONS[func] + ':RANG ' + meas_range)
             print('RANGE:  ' + self.query(FUNCTIONS[func] + ':RANG?'))
 
     def measure(self):
-        return
+        """Trigger and read a measurement.
+
+        Triggers the instrument for a measurement and queries the
+        measured value.
+
+        Returns:
+            str: The measured value.
+        """
+        return self.query('READ?')
 
 
 if __name__ == '__main__':
     hp = HP34401A('ASRL6::INSTR', timeout=5000)
-    hp.setup('VDC', 10, 'MAX')
+    hp.setup('VDC', '10', '10')
+
 
