@@ -79,3 +79,7 @@ class DAC:
         chl = (channel + 0x09) & 0xFF           # 0x0A for channel 1, etc.
         val = volt.to_bytes(2, 'big')           # b'\xVV\xVV'
         self.write(bytes([0x00, chl]) + val)    # b'\x00\x0X\xVV\xVV'
+
+if __name__ == '__main__':
+    dac = DAC('COM3')
+    dac.set_volt(1, 1000)

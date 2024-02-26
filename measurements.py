@@ -21,11 +21,11 @@ def sweep_dac_volt(dmm_resource, dac_port, dac_channel, sweep_volt,
 
 
 if __name__ == "__main__":
-    sweep = range(0, 10, 1)
+    sweep = range(0, 10000, 1)
     t0 = time.time()
-    dac_volt = sweep_dac_volt('ASRL6::INSTR', 'COM3', 6, sweep)
+    dac_volt = sweep_dac_volt('ASRL6::INSTR', 'COM3', 2, sweep)
     print("Measurement finished in " + str(time.time() - t0) + "s")
 
-    with open('dac_ch1_hp34401a.csv', 'w') as file:
+    with open('dac_ch2_hp34401a.csv', 'w') as file:
         wr = csv.writer(file)
-        wr.writerows([np.array(sweep) / 1000, dac_volt])
+        wr.writerows([sweep, dac_volt])
