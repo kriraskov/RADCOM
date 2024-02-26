@@ -167,7 +167,8 @@ class HP34401A(Instrument):
 
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: float = 0.):
-        super().__init__(resource_name, query_delay, timeout)
+        super().__init__(resource_name, query_delay, timeout,
+                         read_termination='\r\n')
         self.write('SYST:REM')          # Remote operation
         self.write('TRIG:SOUR IMM')     # Internal trigger
 
@@ -177,10 +178,10 @@ class HP34401A(Instrument):
         Args:
             func (str): DMM function. See the 34401A user guide for a
                 list of available functions.
-            meas_rate (str):  Integration time in number of power line cycles
-                (0.02, 0.2, 1, 10, or 100).
-            meas_range (str): Measurement range. Se the 34401A user guide for
-                a list of available ranges.
+            meas_rate (str): Integration time in number of power line
+                cycles (0.02, 0.2, 1, 10, or 100).
+            meas_range (str): Measurement range. Se the 34401A user
+                guide for a list of available ranges.
         """
         self.write('FUNC "' + FUNCTIONS[func] + '"')
         print('=== HP34401A: ' + FUNCTIONS[func] + ' MEASUREMENT ===')
