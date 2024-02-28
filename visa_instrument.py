@@ -12,7 +12,7 @@ class Instrument:
 
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: float = 0., write_termination: str = '\n',
-                 read_termination: str = '\n'):
+                 read_termination: str = '\r\n'):
         """Instrument constructor.
 
         Initialize the resources need to remotely control an instrument
@@ -93,17 +93,26 @@ class Instrument:
 
 class FLUKE45(Instrument):
     def __init__(self, resource_name: str, query_delay: float = 0.,
-                 timeout: float = 0.):
+                 timeout: float = 0., write_termination: str = '\n',
+                 read_termination: str = '\r\n'):
         """FLUKE 45 constructor.
+
+        Initialize the resources need to remotely control the instrument
+        with VISA and setup the instrument for external trigger with
+        settling delay. To list available devices, use
+        `list_resources()` from `pyvisa.highlevel.ResourceManager`.
 
         Args:
             resource_name (str): Address of resource to initialize.
             query_delay (float): Delay between write and read in query
                 commands.
             timeout (float): Time before read commands abort.
+            write_termination (str): Input terminator for write
+                commands.
+            read_termination (str): Output terminator for read commands.
         """
         super().__init__(resource_name, query_delay, timeout,
-                         write_termination='\r\n', read_termination='\r\n')
+                         write_termination, read_termination)
         self.write('TRIG 3')    # External trigger with settling delay.
 
     def query(self, cmd: str):
@@ -156,19 +165,28 @@ class FLUKE45(Instrument):
 
 
 class HP34401A(Instrument):
-    """HP/Agilent 34401A constructor.
-
-    Args:
-        resource_name (str): Address of resource to initialize.
-        query_delay (float): Delay between write and read in query
-            commands.
-        timeout (float): Time before read commands abort.
-    """
-
     def __init__(self, resource_name: str, query_delay: float = 0.,
-                 timeout: float = 0.):
+                 timeout: float = 0., write_termination: str = '\n',
+                 read_termination: str = '\r\n'):
+        """HP/Agilent 34401A constructor.
+
+        Initialize the resources need to remotely control the instrument
+        with VISA and setup the instrument for remote operation with
+        internal trigger. To list available devices, use
+        `list_resources()` from `pyvisa.highlevel.ResourceManager`.
+
+        Args:
+            resource_name (str): Address of resource to initialize.
+            query_delay (float): Delay between write and read in query
+                commands.
+            timeout (float): Time before read commands abort.
+            write_termination (str): Input terminator for write
+                commands.
+            read_termination (str): Output terminator for read commands.
+        """
+
         super().__init__(resource_name, query_delay, timeout,
-                         read_termination='\r\n')
+                         write_termination, read_termination)
         self.write('SYST:REM')          # Remote operation
         self.write('TRIG:SOUR IMM')     # Internal trigger
 
