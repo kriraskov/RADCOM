@@ -221,6 +221,29 @@ class HP34401A(Instrument):
         return self.query('READ?')
 
 
+class MS464xB(Instrument):
+    def __init__(self, resource_name: str, query_delay: float = 0.,
+                 timeout: float = 0., write_termination: str = '\n',
+                 read_termination: str = '\r\n'):
+        """Instrument constructor.
+
+        Initialize the resources need to remotely control the instrument
+        with VISA. To list available devices, use `list_resources()`
+        from `pyvisa.highlevel.ResourceManager`.
+
+        Args:
+            resource_name (str): Address of resource to initialize.
+            query_delay (float): Delay between write and read in query
+                commands.
+            timeout (float): Time before read commands abort.
+            write_termination (str): Input terminator for write
+                commands.
+            read_termination (str): Output terminator for read commands.
+        """
+        super().__init__(resource_name, query_delay, timeout,
+                         write_termination, read_termination)
+
+
 if __name__ == '__main__':
     hp = HP34401A('ASRL6::INSTR', timeout=5000)
     hp.setup('VDC', '10', '10')
