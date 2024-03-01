@@ -41,8 +41,6 @@ class Instrument:
         self._resource.write_termination = write_termination
         self._resource.query_delay = query_delay
         self._resource.timeout = timeout
-        # Reset; clear status register; enable OPC; enable std event
-        print(self._resource.query('*RST;*CLS;*ESE 1;*SRE 32;*IDN?'))
 
     def write(self, cmd: str):
         """Write command to instrument.
@@ -54,6 +52,8 @@ class Instrument:
         Args:
             cmd (str): Command to write
         """
+        # The instrument executes every command completely before
+        # continuing to the next.
         self.query(cmd + ';*OPC?')
 
     def read(self):
@@ -113,6 +113,8 @@ class FLUKE45(Instrument):
         """
         super().__init__(resource_name, query_delay, timeout,
                          write_termination, read_termination)
+        # Reset; clear status register; enable OPC; enable std event
+        print(self._resource.query('*RST;*CLS;*ESE 1;*SRE 32;*IDN?'))
         self.write('TRIG 3')    # External trigger with settling delay.
 
     def query(self, cmd: str):
@@ -187,6 +189,8 @@ class HP34401A(Instrument):
 
         super().__init__(resource_name, query_delay, timeout,
                          write_termination, read_termination)
+        # Reset; clear status register; enable OPC; enable std event
+        print(self._resource.query('*RST;*CLS;*ESE 1;*SRE 32;*IDN?'))
         self.write('SYST:REM')          # Remote operation
         self.write('TRIG:SOUR IMM')     # Internal trigger
 
@@ -242,6 +246,27 @@ class MS464xB(Instrument):
         """
         super().__init__(resource_name, query_delay, timeout,
                          write_termination, read_termination)
+        print(self._resource.query('*IDN?'))
+
+    def write(self, cmd: str):
+        self._resource.write()
+
+    def setup(self, n_points: str, f_center: str = None, f_span: str = None,
+              f_start: str = None, f_stop: str = None,
+              f_sweep_type: str = 'LIN', channel: str = '1'):
+        sense = ':SENS:' + channel
+        if (f_center and f_span) and not (f_start or f_stop):
+            self.write(sense + 'FREQ:CENT ' + f_center)
+            self.write(sense + 'FREQ:SPAN ' + f_span)
+        elif (f_start and f_stop) and not (f_center or f_span):
+            self.write(sense + 'FREQ:STAR ' + f_start)
+            self.write(sense + 'FREQ:STOP ' + f_stop)
+        else:
+            raise ValueError('Specify the frequency ranger either using the'
+                             'center frequency and span, or the start and'
+                             'stop frequeny.')
+        self.write(sense + 'SWE:TYP ' + f_sweep_type)
+        self.write(sense + 'SWE:POIN ' + n_points)
 
 
 if __name__ == '__main__':
