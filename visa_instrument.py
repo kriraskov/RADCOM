@@ -186,7 +186,6 @@ class HP34401A(Instrument):
                 commands.
             read_termination (str): Output terminator for read commands.
         """
-
         super().__init__(resource_name, query_delay, timeout,
                          write_termination, read_termination)
         # Reset; clear status register; enable OPC; enable std event
@@ -228,7 +227,7 @@ class HP34401A(Instrument):
 class MS464xB(Instrument):
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: float = 0., write_termination: str = '\n',
-                 read_termination: str = '\r\n'):
+                 read_termination: str = '\n'):
         """Instrument constructor.
 
         Initialize the resources need to remotely control the instrument
@@ -247,30 +246,56 @@ class MS464xB(Instrument):
         super().__init__(resource_name, query_delay, timeout,
                          write_termination, read_termination)
         print(self._resource.query('*IDN?'))
-
-    def write(self, cmd: str):
-        self._resource.write()
-
-    def setup(self, n_points: str, f_center: str = None, f_span: str = None,
-              f_start: str = None, f_stop: str = None,
-              f_sweep_type: str = 'LIN', channel: str = '1'):
-        sense = ':SENS:' + channel
+        self.write('LANG NATIVE')
+        
+    def close(self):
+        self._resource.write('RTL')
+        self._resource.close()
+        
+    def setup(self, n_points: int, f_center: float = None,
+              f_span: float = None, f_start: float = None,
+              f_stop: float = None, f_cw: float = None,
+              f_sweep_type: str = 'LIN', channel: int = 1):
+        sense = ':SENS' + str(channel)
         if (f_center and f_span) and not (f_start or f_stop):
-            self.write(sense + 'FREQ:CENT ' + f_center)
-            self.write(sense + 'FREQ:SPAN ' + f_span)
+            self.write(sense + ':FREQ:CENT ' + str(f_center))
+            self.write(sense + ':FREQ:SPAN ' + str(f_span))
         elif (f_start and f_stop) and not (f_center or f_span):
-            self.write(sense + 'FREQ:STAR ' + f_start)
-            self.write(sense + 'FREQ:STOP ' + f_stop)
+            self.write(sense + ':FREQ:STAR ' + str(f_start))
+            self.write(sense + ':FREQ:STOP ' + str(f_stop))
+        elif f_cw and not(f_center or f_span or f_start or f_stop):
+            self.write(sense + ':FREQ:CW ' + str(f_cw))
         else:
-            raise ValueError('Specify the frequency ranger either using the'
-                             'center frequency and span, or the start and'
-                             'stop frequeny.')
-        self.write(sense + 'SWE:TYP ' + f_sweep_type)
-        self.write(sense + 'SWE:POIN ' + n_points)
+            raise ValueError('Incorrect sweep specification.')
+        self.write(sense + ':SWE:TYP ' + f_sweep_type)
+        self.write(sense + ':SWE:POIN ' + str(n_points))
+            
+        
+    def measure(self, x: int, param: str = 'S21', marker_no: int = 1,
+                channel: int = 1):
+        calc = ':CALC' + str(channel)
+        self.write(calc + ':PAR1:MARK' + str(marker_no) + ':ACT')
+        self.write(calc + ':FORM LOGPH')
+        self.write(calc + ':PAR1:MARK' + str(marker_no) + ':X ' + str(x))
+        self.write('TRS;WFS')
+        self.write(calc + ':PAR1:DEF ' + param)
+        return self.query(calc + ':PAR1:MARK' + str(marker_no) + ':Y?')
+    
+    def save_sweep(self, filename):
+        self.write(':FORM:SNP:FREQ HZ')       # Set unit of s2p file to Hz
+        self.write(':FORM:SNP:PAR LOGPH')     # Log-Phase format of s2p file
+        # Lightning 37xxxx commands - refer to PM Supplement and 37xxxx PM
+        # Trigger sweep, wait full sweep, save to path
+        self.write('TRS;WFS;SAVE "' + filename + '"')
 
 
 if __name__ == '__main__':
-    hp = HP34401A('ASRL6::INSTR', timeout=5000)
-    hp.setup('VDC', '10', '10')
-
-
+    ms4644b = MS464xB('TCPIP0::192.168.96.47::inst0::INSTR', timeout=5000)
+    
+    try:
+        # ms4644b.setup(n_points=301, f_start=8E9, f_stop=13E9, f_sweep_type='LIN')
+        # ms4644b.save_sweep('C:\\Users\\VectorStarUser\\Desktop\\RadCom_Exjobb\\QORVO_CMD297P34\\test1.s2p')
+        #ms4644b.measure(11.25e9)
+        ms4644b.close()
+    except:
+        ms4644b.close()
