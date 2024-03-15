@@ -270,7 +270,6 @@ class MS464xB(Instrument):
         self.write(sense + ':SWE:TYP ' + f_sweep_type)
         self.write(sense + ':SWE:POIN ' + str(n_points))
             
-        
     def measure(self, x: int, param: str = 'S21', marker_no: int = 1,
                 channel: int = 1):
         calc = ':CALC' + str(channel)
