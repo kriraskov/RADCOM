@@ -41,6 +41,7 @@ class Instrument:
         self._resource.write_termination = write_termination
         self._resource.query_delay = query_delay
         self._resource.timeout = timeout
+        self.echo = False
 
     def write(self, cmd: str):
         """Write command to instrument.
@@ -54,6 +55,8 @@ class Instrument:
         """
         # The instrument executes every command completely before
         # continuing to the next.
+        if self.echo:
+            print(cmd)
         self.query(cmd + ';*OPC?')
 
     def read(self):
@@ -80,6 +83,8 @@ class Instrument:
         Returns:
             str: The value in the output buffer.
         """
+        if self.echo:
+            print(cmd)
         return self._resource.query(cmd)
 
     def close(self):
@@ -115,7 +120,7 @@ class FLUKE45(Instrument):
                          write_termination, read_termination)
         # Reset; clear status register; enable OPC; enable std event
         print(self._resource.query('*RST;*CLS;*ESE 1;*SRE 32;*IDN?'))
-        self.write('TRIG 3')    # External trigger with settling delay.
+        self.write('TRIG 3')  # External trigger with settling delay.
 
     def query(self, cmd: str):
         """Query command.
@@ -190,8 +195,8 @@ class HP34401A(Instrument):
                          write_termination, read_termination)
         # Reset; clear status register; enable OPC; enable std event
         print(self._resource.query('*RST;*CLS;*ESE 1;*SRE 32;*IDN?'))
-        self.write('SYST:REM')          # Remote operation
-        self.write('TRIG:SOUR IMM')     # Internal trigger
+        self.write('SYST:REM')  # Remote operation
+        self.write('TRIG:SOUR IMM')  # Internal trigger
 
     def setup(self, func: str, meas_rate: str = '10', meas_range: str = 'MAX'):
         """Setup the instrument.
@@ -247,54 +252,62 @@ class MS464xB(Instrument):
                          write_termination, read_termination)
         print(self._resource.query('*IDN?'))
         self.write('LANG NATIVE')
-        
+
     def close(self):
         self._resource.write('RTL')
         self._resource.close()
-        
-    def setup(self, n_points: int, f_center: float = None,
-              f_span: float = None, f_start: float = None,
-              f_stop: float = None, f_cw: float = None,
-              f_sweep_type: str = 'LIN', channel: int = 1):
+
+    def freq_setup(self, n_points: int, power: float, f_center: float = None,
+                   f_span: float = None, f_start: float = None,
+                   f_stop: float = None, f_cw: float = None,
+                   f_sweep_type: str = 'LIN', channel: int = 1, port: int = 1,
+                   echo: bool = True):
         sense = ':SENS' + str(channel)
+        sourc = ':SOUR' + str(channel) + ':POW:PORT' + str(port) + ' '
+        self.echo = echo
+        self.write(sense + ':SWE:TYP ' + f_sweep_type)
         if (f_center and f_span) and not (f_start or f_stop):
             self.write(sense + ':FREQ:CENT ' + str(f_center))
             self.write(sense + ':FREQ:SPAN ' + str(f_span))
         elif (f_start and f_stop) and not (f_center or f_span):
             self.write(sense + ':FREQ:STAR ' + str(f_start))
             self.write(sense + ':FREQ:STOP ' + str(f_stop))
-        elif f_cw and not(f_center or f_span or f_start or f_stop):
+        elif f_cw and not (f_center or f_span or f_start or f_stop):
             self.write(sense + ':FREQ:CW ' + str(f_cw))
         else:
             raise ValueError('Incorrect sweep specification.')
-        self.write(sense + ':SWE:TYP ' + f_sweep_type)
         self.write(sense + ':SWE:POIN ' + str(n_points))
-            
+        self.write(sourc + str(power))
+        self.write(':FORM:SNP:FREQ HZ')  # Set unit of s2p file to Hz
+        self.write(':FORM:SNP:PAR LOGPH')  # Log-Phase format of s2p file
+
     def measure(self, x: int, param: str = 'S21', marker_no: int = 1,
-                channel: int = 1):
+                channel: int = 1, trace: int = 1, echo: bool = False):
         calc = ':CALC' + str(channel)
-        self.write(calc + ':PAR1:MARK' + str(marker_no) + ':ACT')
+        self.echo = echo
+        calc = ':CALC' + str(channel)
+        par = ':PAR' + str(trace)
+        self.write(calc + par + ':DEF ' + param)
+        self.write(calc + par + ':MARK' + str(marker_no) + ':ACT')
         self.write(calc + ':FORM LOGPH')
-        self.write(calc + ':PAR1:MARK' + str(marker_no) + ':X ' + str(x))
+        self.write(calc + par + ':MARK' + str(marker_no) + ':X ' + str(x))
         self.write('TRS;WFS')
-        self.write(calc + ':PAR1:DEF ' + param)
-        return self.query(calc + ':PAR1:MARK' + str(marker_no) + ':Y?')
-    
-    def save_sweep(self, filename):
-        self.write(':FORM:SNP:FREQ HZ')       # Set unit of s2p file to Hz
-        self.write(':FORM:SNP:PAR LOGPH')     # Log-Phase format of s2p file
+        return self.query(calc + par + ':MARK' + str(marker_no) + ':Y?')
+
+    def save_sweep(self, filename: str, echo: bool = False):
         # Lightning 37xxxx commands - refer to PM Supplement and 37xxxx PM
         # Trigger sweep, wait full sweep, save to path
+        self.echo = echo
         self.write('TRS;WFS;SAVE "' + filename + '"')
 
 
 if __name__ == '__main__':
     ms4644b = MS464xB('TCPIP0::192.168.96.47::inst0::INSTR', timeout=5000)
-    
+
     try:
         # ms4644b.setup(n_points=301, f_start=8E9, f_stop=13E9, f_sweep_type='LIN')
         # ms4644b.save_sweep('C:\\Users\\VectorStarUser\\Desktop\\RadCom_Exjobb\\QORVO_CMD297P34\\test1.s2p')
-        #ms4644b.measure(11.25e9)
+        # ms4644b.measure(11.25e9)
         ms4644b.close()
     except:
         ms4644b.close()
