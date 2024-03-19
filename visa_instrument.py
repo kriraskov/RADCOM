@@ -8,7 +8,11 @@ FUNCTIONS = {'AAC': 'CURR:AC', 'CURR:AC': 'CURR:AC', 'ADC': 'CURR:DC',
 
 
 class Instrument:
-    """Generic VISA instrument."""
+    """Generic VISA instrument.
+
+    Params:
+        echo (bool): Print write and query commands to terminal.
+    """
 
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: float = 0., write_termination: str = '\n',
@@ -41,7 +45,7 @@ class Instrument:
         self._resource.write_termination = write_termination
         self._resource.query_delay = query_delay
         self._resource.timeout = timeout
-        self.echo = False
+        self.echo = echo
 
     def write(self, cmd: str):
         """Write command to instrument.
@@ -233,11 +237,11 @@ class MS464xB(Instrument):
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: float = 0., write_termination: str = '\n',
                  read_termination: str = '\n'):
-        """Instrument constructor.
+        """MS464xB constructor.
 
-        Initialize the resources need to remotely control the instrument
-        with VISA. To list available devices, use `list_resources()`
-        from `pyvisa.highlevel.ResourceManager`.
+        Initialize the resources need to remotely control the MS464xB
+        network analyzer with VISA. To list available devices, use
+        `list_resources()` from `pyvisa.highlevel.ResourceManager`.
 
         Args:
             resource_name (str): Address of resource to initialize.
