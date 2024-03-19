@@ -16,7 +16,7 @@ class Instrument:
 
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: float = 0., write_termination: str = '\n',
-                 read_termination: str = '\r\n'):
+                 read_termination: str = '\r\n', echo: bool = False):
         """Instrument constructor.
 
         Initialize the resources need to remotely control an instrument
@@ -103,7 +103,7 @@ class Instrument:
 class FLUKE45(Instrument):
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: float = 0., write_termination: str = '\n',
-                 read_termination: str = '\r\n'):
+                 read_termination: str = '\r\n', echo: bool = False):
         """FLUKE 45 constructor.
 
         Initialize the resources need to remotely control the instrument
@@ -121,7 +121,7 @@ class FLUKE45(Instrument):
             read_termination (str): Output terminator for read commands.
         """
         super().__init__(resource_name, query_delay, timeout,
-                         write_termination, read_termination)
+                         write_termination, read_termination, echo)
         # Reset; clear status register; enable OPC; enable std event
         print(self._resource.query('*RST;*CLS;*ESE 1;*SRE 32;*IDN?'))
         self.write('TRIG 3')  # External trigger with settling delay.
@@ -178,7 +178,7 @@ class FLUKE45(Instrument):
 class HP34401A(Instrument):
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: float = 0., write_termination: str = '\n',
-                 read_termination: str = '\r\n'):
+                 read_termination: str = '\r\n', echo: bool = False):
         """HP/Agilent 34401A constructor.
 
         Initialize the resources need to remotely control the instrument
@@ -196,7 +196,7 @@ class HP34401A(Instrument):
             read_termination (str): Output terminator for read commands.
         """
         super().__init__(resource_name, query_delay, timeout,
-                         write_termination, read_termination)
+                         write_termination, read_termination, echo)
         # Reset; clear status register; enable OPC; enable std event
         print(self._resource.query('*RST;*CLS;*ESE 1;*SRE 32;*IDN?'))
         self.write('SYST:REM')  # Remote operation
@@ -233,10 +233,31 @@ class HP34401A(Instrument):
         return self.query('READ?')
 
 
+class N6700B(Instrument):
+    def __init__(self, resource_name: str, query_delay: float = 0.,
+                 timeout: float = 0., write_termination: str = '\n',
+                 read_termination: str = '\r\n', echo: bool = False):
+        super().__init__(resource_name, query_delay, timeout,
+                         write_termination, read_termination, echo)
+        print(self._resource.query('*IDN?'))
+
+    def set_volt(self, volt: float, channel: int):
+        self.write('VOLT ' + str(volt) + ',(@' + str(channel) + ')')
+
+    def set_current(self, current: float, channel: int):
+        self.write('CURR ' + str(current) + ',(@' + str(channel) + ')')
+
+    def enable_output(self, channel: int):
+        self.write('OUTP ON,(@' + str(channel) + ')')
+
+    def disable_output(self, channel: int):
+        self.write('OUTP OFF,(@' + str(channel) + ')')
+
+
 class MS464xB(Instrument):
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: float = 0., write_termination: str = '\n',
-                 read_termination: str = '\n'):
+                 read_termination: str = '\n', echo: bool = False):
         """MS464xB constructor.
 
         Initialize the resources need to remotely control the MS464xB
@@ -253,11 +274,16 @@ class MS464xB(Instrument):
             read_termination (str): Output terminator for read commands.
         """
         super().__init__(resource_name, query_delay, timeout,
-                         write_termination, read_termination)
+                         write_termination, read_termination, echo)
         print(self._resource.query('*IDN?'))
         self.write('LANG NATIVE')
 
     def close(self):
+        """Close resource.
+
+        Closes the PyVISA resource and return the instrument to local
+        control. Wrapper method for `pyvisa.resources.Resource.close()`.
+        """
         self._resource.write('RTL')
         self._resource.close()
 
@@ -266,6 +292,26 @@ class MS464xB(Instrument):
                    f_stop: float = None, f_cw: float = None,
                    f_sweep_type: str = 'LIN', channel: int = 1, port: int = 1,
                    echo: bool = True):
+        """Setup a frequency sweep on a port.
+
+        Configure the frequency sweep and port power levels. Specify
+        frequency range either as (`f_center`, `f_span`) OR as
+        (`f_start`, `f_stop`). Alternatively, configure the CW mode by
+        setting `f_cw`.
+
+        Args:
+            n_points: Number of measurement points for frequency sweep.
+            power: Port power.
+            f_center: Center frequency. Use together with `f_span`.
+            f_span: Sweep span. Use together with `f_center`.
+            f_start: Start frequency. Use together with `f_stop`.
+            f_stop: Stop frequency. Use together with `f_start`.
+            f_cw: CW frequency.
+            f_sweep_type: Frequency sweep type (`LIN` or `LOG`).
+            channel: Channel to configure.
+            port: Port to configure.
+            echo: Echo commands.
+        """
         sense = ':SENS' + str(channel)
         sourc = ':SOUR' + str(channel) + ':POW:PORT' + str(port) + ' '
         self.echo = echo
@@ -288,6 +334,17 @@ class MS464xB(Instrument):
     def power_setup(self, f_cw: float, n_points: int, start: float,
                     stop: float, channel: int = 1, port: int = 1,
                     echo: bool = True):
+        """Setup a power sweep on a port.
+
+        Args:
+            f_cw: CW frequency.
+            n_points: Number of measurement points.
+            start: Start power.
+            stop: Stop power.
+            channel: Channel to configure.
+            port: Port to configure.
+            echo: Echo commands.
+        """
         sourc = ':SOUR' + str(channel) + ':POW:PORT' + str(port)
         sense = ':SENS' + str(channel)
         self.echo = echo
@@ -297,12 +354,25 @@ class MS464xB(Instrument):
         self.write(sourc + ':LIN:POW:STOP ' + str(stop))
         self.write(sourc + ':LIN:POW:POIN ' + str(n_points))
 
-    def measure(self, x: int, param: str = 'S21', marker_no: int = 1,
+    def measure(self, x: int, param: str = 'S11', marker_no: int = 1,
                 channel: int = 1, trace: int = 1, echo: bool = False):
-        calc = ':CALC' + str(channel)
-        self.echo = echo
+        """Measure a parameter.
+
+        Measure the specified parameter at a measurement point.
+
+        Args:
+            x: x-coordinate for measurement.
+            param: Parameter to measure.
+            marker_no: Marker number.
+            channel: Channel to read.
+            trace: Trace to read.
+            echo: Echo commands.
+
+        Returns: Measured value at the specified x-coordinate.
+        """
         calc = ':CALC' + str(channel)
         par = ':PAR' + str(trace)
+        self.echo = echo
         self.write(calc + par + ':DEF ' + param)
         self.write(calc + par + ':MARK' + str(marker_no) + ':ACT')
         self.write(calc + ':FORM LOGPH')
@@ -311,6 +381,15 @@ class MS464xB(Instrument):
         return self.query(calc + par + ':MARK' + str(marker_no) + ':Y?')
 
     def save_sweep(self, filename: str, echo: bool = False):
+        """Perform and save a sweep.
+
+        Initiates a sweep and waits until the sweep is finished before
+        saving the sweep locally on the instrument.
+
+        Args:
+            filename: Full path name of the saved file.
+            echo: Echo commands.
+        """
         # Lightning 37xxxx commands - refer to PM Supplement and 37xxxx PM
         # Trigger sweep, wait full sweep, save to path
         self.echo = echo
