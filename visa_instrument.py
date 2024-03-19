@@ -281,6 +281,18 @@ class MS464xB(Instrument):
         self.write(':FORM:SNP:FREQ HZ')  # Set unit of s2p file to Hz
         self.write(':FORM:SNP:PAR LOGPH')  # Log-Phase format of s2p file
 
+    def power_setup(self, f_cw: float, n_points: int, start: float,
+                    stop: float, channel: int = 1, port: int = 1,
+                    echo: bool = True):
+        sourc = ':SOUR' + str(channel) + ':POW:PORT' + str(port)
+        sense = ':SENS' + str(channel)
+        self.echo = echo
+        self.write(sense + ':SWE:TYP:POW')
+        self.write(sense + ':FREQ:CW ' + str(f_cw))
+        self.write(sourc + ':LIN:POW:STAR ' + str(start))
+        self.write(sourc + ':LIN:POW:STOP ' + str(stop))
+        self.write(sourc + ':LIN:POW:POIN ' + str(n_points))
+
     def measure(self, x: int, param: str = 'S21', marker_no: int = 1,
                 channel: int = 1, trace: int = 1, echo: bool = False):
         calc = ':CALC' + str(channel)
