@@ -46,6 +46,7 @@ class Instrument:
         self._resource.query_delay = query_delay
         self._resource.timeout = timeout
         self.echo = echo
+        print(self._resource.query('*IDN?'))
 
     def write(self, cmd: str):
         """Write command to instrument.
@@ -123,7 +124,7 @@ class FLUKE45(Instrument):
         super().__init__(resource_name, query_delay, timeout,
                          write_termination, read_termination, echo)
         # Reset; clear status register; enable OPC; enable std event
-        print(self._resource.query('*RST;*CLS;*ESE 1;*SRE 32;*IDN?'))
+        print(self._resource.write('*RST;*CLS;*ESE 1;*SRE 32'))
         self.write('TRIG 3')  # External trigger with settling delay.
 
     def query(self, cmd: str):
@@ -198,7 +199,7 @@ class HP34401A(Instrument):
         super().__init__(resource_name, query_delay, timeout,
                          write_termination, read_termination, echo)
         # Reset; clear status register; enable OPC; enable std event
-        print(self._resource.query('*RST;*CLS;*ESE 1;*SRE 32;*IDN?'))
+        print(self._resource.write('*RST;*CLS;*ESE 1;*SRE 32'))
         self.write('SYST:REM')  # Remote operation
         self.write('TRIG:SOUR IMM')  # Internal trigger
 
@@ -275,7 +276,6 @@ class MS464xB(Instrument):
         """
         super().__init__(resource_name, query_delay, timeout,
                          write_termination, read_termination, echo)
-        print(self._resource.query('*IDN?'))
         self.write('LANG NATIVE')
 
     def close(self):
@@ -284,6 +284,7 @@ class MS464xB(Instrument):
         Closes the PyVISA resource and return the instrument to local
         control. Wrapper method for `pyvisa.resources.Resource.close()`.
         """
+        print('RTL')
         self._resource.write('RTL')
         self._resource.close()
 
