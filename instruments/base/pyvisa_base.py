@@ -4,97 +4,92 @@ import pyvisa
 class PyVisaBase:
     """Base class for PyVisa operation.
     
-    Wrapps the PyVisa functionality to provide an abstraction of
-    the interface. The class represents a PyVisa resource and the
-    properties needed to communicate with it.
-    """
-    def __init__(self, resource: pyvisa.Resource = None,
-                 echo: bool = False):
-        """Base constructor.
+    Wraps the PyVisa API to provide an abstraction of its interface.
+    This class represents a PyVisa resource and the properties needed to
+    communicate with it. If no resource is provided at instantiation,
+    open a new resource with :meth:`open_resource()`. List available
+    resources with :meth:`list_resources()`.
 
-        Args:
-            resource (pyvisa.Resource): A PyVisa resource object. If no
-                object is provided at instatiation, open a new resource
-                with `open_resource()`.
-            echo (bool): Echo commands when written to the instrument.
-        """
+    Attributes:
+        resource (pyvisa.Resource): Reference to the PyVisa resource
+            object that handles a specific resource.
+        echo (bool): Echo commands when written to the instrument.
+    """
+    def __init__(self, resource: pyvisa.resources.Resource = None,
+                 echo: bool = False):
         self.resource = resource
         self.echo = echo
 
     @property
-    def read_termination(self):
+    def read_termination(self) -> str:
+        """Termination character of read strings."""
         return self.resource.read_termination
 
     @read_termination.setter
-    def read_termination(self, value: str):
+    def read_termination(self, value: str) -> None:
         self.resource.read_termination = value
 
     @property
-    def write_termination(self):
+    def write_termination(self) -> str:
+        """Termination character of written commands."""
         return self.resource.write_termination
 
     @write_termination.setter
-    def write_termination(self, value: str):
+    def write_termination(self, value: str) -> None:
         self.resource.write_termination = value
 
     @property
-    def query_delay(self):
+    def query_delay(self) -> float:
+        """Delay in seconds between write and read."""
         return self.resource.query_delay
 
     @query_delay.setter
-    def query_delay(self, value: float):
+    def query_delay(self, value: float) -> None:
         self.resource.query_delay = value
 
     @property
-    def timeout(self):
+    def timeout(self) -> int:
+        """Time in milliseconds before interrupt of unanswered reads."""
         return self.resource.timeout
 
     @timeout.setter
-    def timeout(self, value: int):
+    def timeout(self, value: int) -> None:
         self.resource.timeout = value
         
     def open_resource(self, resource_name: str, query_delay: float,
                       timeout: int, read_termination: str,
-                      write_termination: str):
-        self._rm = pyvisa.ResourceManager()
-        self.resource = self._rm.open_resource(resource_name)
+                      write_termination: str) -> None:
+        """Open a resource by name and set its attributes."""
+        rm = pyvisa.ResourceManager()
+        self.resource = rm.open_resource(resource_name)
         self.read_termination = read_termination
         self.write_termination = write_termination
         self.query_delay = query_delay
         self.timeout = timeout
 
-    def write(self, cmd: str):
-        """Write command to instrument.
-
-        Args:
-            cmd (str): Command to write.
-        """
+    def write(self, cmd: str) -> None:
+        """Write a command to the instrument."""
         if self.echo:
             print(f'{self.__class__.__name__}: {cmd}')
         self.resource.write(cmd)
 
-    def read(self):
-        """Read the output buffer of and instrument.
-
-        Returns:
-            str: The value in the output buffer.
-        """
+    def read(self) -> str:
+        """Read the output buffer of and instrument."""
         return self.resource.read()
 
-    def query(self, cmd: str):
-        """Consecutive write and read of an instrument query.
-
-        Args:
-            cmd (str): Command to write
-
-        Returns:
-            str: The value in the output buffer.
-        """
+    def query(self, cmd: str) -> str:
+        """Consecutive write and read of a query command."""
         if self.echo:
             print(f'{self.__class__.__name__}: {cmd}')
         return self.resource.query(cmd)
 
-    def close(self):
+    def close(self) -> None:
         """Close PyVisa resource."""
         self.resource.close()
+
+    @staticmethod
+    def list_resources(self) -> None:
+        """List available resources."""
+        rm = pyvisa.ResourceManager()
+        rm.list_resources()
 

@@ -10,18 +10,18 @@ class Instrument(PyVisaBase):
         """Instrument constructor.
 
         Initialize the resources needed to remotely control an
-        instrument over VISA. To list available devices, use `list_resources()`
-        from `pyvisa.highlevel.ResourceManager`.
-
-        Example:
-            >>> import pyvisa
-            >>> rm = pyvisa.ResourceManager()
-            >>> rm.list_resources()
-            ('ASRL5::INSTR', 'ASRL7::INSTR')
-            >>> inst = Instrument('ASRL7::INSTR')
+        instrument over VISA and print the instruments identity string.
 
         Args:
-            resource_name (str): Address of resource to initialize.
+            resource_name (str): Name of resource to initialize.
+            query_delay (float): Time in seconds between write and read.
+            timeout (float): Time in milliseconds before interrupt of
+                unanswered reads.
+            write_termination (str): Termination character of written
+                commands.
+            read_termination (str): Termination character of read
+                strings.
+            echo (bool): Echo commands.
         """
         super().__init__(None, echo)
         self.open_resource(resource_name, query_delay, timeout,
@@ -29,60 +29,66 @@ class Instrument(PyVisaBase):
         print(self.identity)
 
     @property
-    def complete(self):
+    def complete(self) -> str:
+        """Value of the operation-complete register."""
         return self.query('*OPC?')
 
     @property
-    def status(self):
+    def status(self) -> str:
+        """Value of the status-byte register."""
         return self.query('*STB?')
 
     @property
-    def options(self):
+    def options(self) -> str:
+        """Available options."""
         return self.query('*OPT?')
 
     @property
-    def identity(self):
+    def identity(self) -> str:
+        """The instruments identity string."""
         return self.query('*IDN?')
 
     @property
-    def event_status_enable(self):
+    def event_status_enable(self) -> str:
+        """Value of the event-status-enable register."""
         return self.query('*ESE?')
 
     @event_status_enable.setter
-    def event_status_enable(self, value: int):
+    def event_status_enable(self, value: int) -> None:
         self.write(f'*ESE {value}')
 
     @property
-    def service_request_enable(self):
+    def service_request_enable(self) -> str:
+        """Value of the service-request-enable register."""
         return self.query('*SRE?')
 
     @service_request_enable.setter
-    def service_request_enable(self, value: int):
+    def service_request_enable(self, value: int) -> None:
         self.write(f'*SRE {value}')
         
-    def write(self, cmd: str):
-        """Write command to instrument and await complete execution.
-
-        Args:
-            cmd (str): Command to write.
-        """
+    def write(self, cmd: str) -> None:
+        """Write command to instrument and await execution."""
         super().write(cmd)
         while not self.complete:
             pass
 
-    def trigger(self):
+    def trigger(self) -> None:
+        """Trigger the instrument for a measurement."""
         self.write('*TRG')
 
-    def clear(self):
+    def clear(self) -> None:
+        """Clear the status register and error queue."""
         self.write('*CLS')
 
-    def reset(self):
+    def reset(self) -> None:
+        """Reset the instrument."""
         self.write('*RST')
 
     def event_status_enable_select(
             self, operation_complete: bool = False, query_error: bool = False,
             device_specific_error: bool = False, execution_error: bool = False,
-            command_error: bool = False, power_on: bool = False):
+            command_error: bool = False, power_on: bool = False) -> None:
+        """Select bits of the event-status-enable register."""
         self.event_status_enable = (power_on << 7) | (command_error << 5) \
             | (execution_error << 4) | (device_specific_error << 3) \
             | (query_error << 2) | operation_complete
@@ -92,7 +98,8 @@ class Instrument(PyVisaBase):
             questionable_data_summary: bool = False,
             message_available: bool = False,
             standard_event_summary: bool = False, master_summary: bool = False,
-            standard_operation_summary: bool = False):
+            standard_operation_summary: bool = False) -> None:
+        """Select bits of the service-request-enable register."""
         self.service_request_enable = (standard_operation_summary << 7) \
             | (master_summary << 6) | (standard_event_summary << 5) \
             | (message_available << 4) | (questionable_data_summary << 3) \
@@ -100,17 +107,31 @@ class Instrument(PyVisaBase):
             
 
 class Channel(PyVisaBase):
-    def __init__(self, number: int, resource: pyvisa.Resource,
+    """A unit within an instrument.
+
+    Use this class to define subsystems within an instrument, such as
+    channels, ports, math channels, etc. Add such objects to the
+    instruments `__dict__`.
+
+    Args:
+        number (int): Channel number.
+        resource (pyvisa.resources.Resource): Reference to the
+            instruments Resource object.
+        echo (bool): Echo commands.
+    """
+    def __init__(self, number: int, resource: pyvisa.resources.Resource,
                  echo: bool = False):
         super().__init__(resource, echo)
         self.number = number
         
-    def write(self, cmd: str):
+    def write(self, cmd: str) -> None:
+        """Write command to instrument and await execution."""
         super().write(cmd)
         while not self.complete:
             pass
 
     @property
-    def complete(self):
+    def complete(self) -> str:
+        """Value of the operation-complete register."""
         return self.query('*OPC?')
         
