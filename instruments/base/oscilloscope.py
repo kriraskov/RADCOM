@@ -16,6 +16,7 @@ class Oscilloscope(ABC, Instrument):
     @property
     @abstractmethod
     def horizontal_scale(self):
+        """Scale of the horizontal axis in seconds per div."""
         ...
 
     @horizontal_scale.setter
@@ -26,6 +27,7 @@ class Oscilloscope(ABC, Instrument):
     @property
     @abstractmethod
     def horizontal_range(self):
+        """Range of the horizontal axis in seconds."""
         ...
 
     @horizontal_range.setter
@@ -36,6 +38,7 @@ class Oscilloscope(ABC, Instrument):
     @property
     @abstractmethod
     def horizontal_position(self):
+        """Offset in seconds of the trigger point."""
         ...
 
     @horizontal_position.setter
@@ -46,6 +49,7 @@ class Oscilloscope(ABC, Instrument):
     @property
     @abstractmethod
     def horizontal_reference(self):
+        """Relative position of the horizontal rescaling point."""
         ...
 
     @horizontal_reference.setter
@@ -56,6 +60,7 @@ class Oscilloscope(ABC, Instrument):
     @property
     @abstractmethod
     def sample_rate(self):
+        """Sampling rate of the oscilloscope."""
         ...
 
     @sample_rate.setter
@@ -66,6 +71,7 @@ class Oscilloscope(ABC, Instrument):
     @property
     @abstractmethod
     def resolution(self):
+        """Resolution of the oscilloscope."""
         ...
 
     @resolution.setter
@@ -76,6 +82,7 @@ class Oscilloscope(ABC, Instrument):
     @property
     @abstractmethod
     def record_length(self):
+        """Number of samples recorded in each acquisition."""
         ...
 
     @record_length.setter
@@ -86,6 +93,7 @@ class Oscilloscope(ABC, Instrument):
     @property
     @abstractmethod
     def trigger_source(self):
+        """Trigger source of the oscilloscope."""
         ...
 
     @trigger_source.setter
@@ -96,6 +104,7 @@ class Oscilloscope(ABC, Instrument):
     @property
     @abstractmethod
     def trigger_level(self):
+        """Trigger level of the selected source."""
         ...
 
     @trigger_level.setter
@@ -106,6 +115,7 @@ class Oscilloscope(ABC, Instrument):
     @property
     @abstractmethod
     def trigger_coupling(self):
+        """Coupling of the external trigger."""
         ...
         
     @trigger_coupling.setter
@@ -115,16 +125,19 @@ class Oscilloscope(ABC, Instrument):
 
     @abstractmethod
     def remote(self):
+        """Configure the oscilloscope for remote operation."""
         ...
 
     @abstractmethod
     def return_to_local(self):
+        """Configure the oscilloscope for local operation."""
         ...
 
     def timebase(self, sample_rate: float = None, resolution: float = None,
                  record_length: float = None, h_scale: float = None,
                  h_range: float = None, h_ref: float = None,
                  h_pos: float = None):
+        """Configure the timebase options of acquistions."""
         if h_scale is not None and h_range is None:
             self.horizontal_scale = h_scale
         elif h_range is not None and h_scale is None:
@@ -149,25 +162,29 @@ class Oscilloscope(ABC, Instrument):
             self.horizontal_position = h_pos
 
     def trigger_config(self, source: str, level: float, coupling: str):
+        """Configure the trigger source."""
         self.trigger_source = source
         self.trigger_level = level
         self.trigger_coupling = coupling
 
 
 class InputChannel(ABC, Channel):
+    """An individual oscilloscope channel."""
     @property
     @abstractmethod
-    def enable(self):
+    def enable(self) -> bool:
+        """Enable the channel."""
         ...
 
     @enable.setter
     @abstractmethod
-    def enable(self, value: bool):
+    def enable(self, value: bool) -> None:
         ...
 
     @property
     @abstractmethod
     def vertical_scale(self):
+        """Scale of the vertical axis in volt per div."""
         ...
 
     @vertical_scale.setter
@@ -178,6 +195,7 @@ class InputChannel(ABC, Channel):
     @property
     @abstractmethod
     def vertical_range(self):
+        """Range of the vertical axis in volt."""
         ...
 
     @vertical_range.setter
@@ -188,6 +206,7 @@ class InputChannel(ABC, Channel):
     @property
     @abstractmethod
     def vertical_position(self):
+        """Vertical position of the waveform on the screen in divs."""
         ...
 
     @vertical_position.setter
@@ -198,6 +217,7 @@ class InputChannel(ABC, Channel):
     @property
     @abstractmethod
     def coupling(self):
+        """Coupling of the channel"""
         ...
     
     @coupling.setter
@@ -207,6 +227,7 @@ class InputChannel(ABC, Channel):
 
     def setup(self, v_scale: float = None, v_range: float = None,
               v_pos: float = None, coupling: str = None):
+        """Set up the oscilloscope channel."""
         self.enable = True
 
         if v_scale is not None and v_range is None:
@@ -224,9 +245,11 @@ class InputChannel(ABC, Channel):
 
 
 class Math(ABC, Channel):
+    """An oscilloscope math channel."""
     @property
     @abstractmethod
     def enable(self):
+        """Enable the channel."""
         ...
 
     @enable.setter
@@ -237,6 +260,7 @@ class Math(ABC, Channel):
     @property
     @abstractmethod
     def expression(self):
+        """Mathematical expression to calculate."""
         ...
 
     @expression.setter
@@ -247,6 +271,7 @@ class Math(ABC, Channel):
     @property
     @abstractmethod
     def vertical_scale(self):
+        """Scale of the vertical axis in volt per div."""
         ...
 
     @vertical_scale.setter
@@ -257,6 +282,7 @@ class Math(ABC, Channel):
     @property
     @abstractmethod
     def vertical_range(self):
+        """Range of the vertical axis in volt."""
         ...
 
     @vertical_range.setter
@@ -265,6 +291,7 @@ class Math(ABC, Channel):
         ...
 
     def setup(self, expr: str, v_range: float = None, v_scale: float = None):
+        """Set up the math channel"""
         self.enable = True
         self.expression = expr
 
@@ -277,9 +304,11 @@ class Math(ABC, Channel):
 
 
 class Measurement(ABC, Channel):
+    """An oscilloscope measurement group."""
     @property
     @abstractmethod
     def enable(self):
+        """Enable the measurement group."""
         ...
 
     @enable.setter
@@ -290,6 +319,7 @@ class Measurement(ABC, Channel):
     @property
     @abstractmethod
     def source1(self):
+        """Primary source of measurements."""
         ...
 
     @source1.setter
@@ -300,6 +330,7 @@ class Measurement(ABC, Channel):
     @property
     @abstractmethod
     def source2(self):
+        """Secondary source for two-channel measurements."""
         ...
 
     @source2.setter
@@ -310,6 +341,7 @@ class Measurement(ABC, Channel):
     @property
     @abstractmethod
     def category(self):
+        """Measurement category."""
         ...
         
     @category.setter
@@ -320,6 +352,7 @@ class Measurement(ABC, Channel):
     @property
     @abstractmethod
     def main(self):
+        """Primary measurement parameter."""
         ...
     
     @main.setter
@@ -330,7 +363,7 @@ class Measurement(ABC, Channel):
     @property
     @abstractmethod
     def statistics(self):
-        """Enable statistics."""
+        """Enable statistics for the measurement group."""
         ...
     
     @statistics.setter
@@ -340,14 +373,17 @@ class Measurement(ABC, Channel):
  
     @abstractmethod
     def read_val(self, parameter: str = None, statistics: str = None):
+        """Read the value of the primary measurement parameter."""
         ...
         
     @abstractmethod
     def add_parameter(self, parameter: str = None):
+        """Add a parameter to the measurement group."""
         ...
         
     def setup(self, main: str, source1: str, source2: str = None,
               category: str = None, statistics: bool = False):
+        """Set up the measurement group."""
         self.enable = True
         
         if category:
