@@ -15,9 +15,9 @@ class RTO6(osc.Oscilloscope):
 
     Parameters:
         C1...C4 (RTO6Channel): Channels 1-4 of the oscilloscope.
-        M1...M8 (RTO6Math): Math channels 1-4 of the oscilloscope.
-        MG1...MG10 (RTO6MeasurementGroup): Measurement groups 1-4 of the
-            oscilloscope.
+        M1...M8 (RTO6Math): Math channels 1-8 of the oscilloscope.
+        MG1...MG10 (RTO6MeasurementGroup): Measurement groups 1-10 of
+            the oscilloscope.
     """
     SOURCES = {'C1': 'CHAN1', 'C2': 'CHAN2', 'C3': 'CHAN3', 'C4': 'CHAN4',
                'EXT': 'EXT'}
