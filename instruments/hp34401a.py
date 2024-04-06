@@ -2,6 +2,7 @@ from .base import multimeter as dmm
 
 
 class HP34401AD(dmm.Multimeter):
+    """HP/Agilent 34401A Multimeter."""
     RANGES = {'100mV': 0.1, '1V': 1, '10V': 10, '100V': 100, '750V': 750,
               '1kV': 1000, '100Ohm': 100, '1kOhm': 1000, '10kOhm': 1e4,
               '100kOhm': 1e5, '1MOhm': 1e6, '10MOhm': 1e7, '100MOhm': 1e8,
@@ -13,77 +14,61 @@ class HP34401AD(dmm.Multimeter):
 
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: int = 2000, write_termination: str = '\n',
-                 read_termination: str = '\r\n', echo: bool = False):
-        """HP/Agilent 34401A constructor.
-
-        Initialize the resources need to remotely control the instrument
-        with VISA and setup the instrument for remote operation with
-        internal trigger. To list available devices, use
-        `list_resources()` from `pyvisa.highlevel.ResourceManager`.
-
-        Args:
-            resource_name (str): Address of resource to initialize.
-            query_delay (float): Delay between write and read in query
-                commands.
-            timeout (float): Time before read commands abort.
-            write_termination (str): Input terminator for write
-                commands.
-            read_termination (str): Output terminator for read commands.
-        """
+                 read_termination: str = '\r\n', echo: bool = False) -> None:
         super().__init__(resource_name, query_delay, timeout,
                          write_termination, read_termination, echo)
         self._function = None
 
     @property
-    def function(self):
+    def function(self) -> str:
         return self.query('FUNC?')
 
     @function.setter
-    def function(self, value: dmm.Function):
+    def function(self, value: dmm.Function) -> None:
         self.write(f'FUNC "{value}"')
         self._function = value
 
     @property
-    def range(self):
+    def range(self) -> str:
         return self.query(f'{self._function}:RANG?')
 
     @range.setter
-    def range(self, value: dmm.Range):
+    def range(self, value: dmm.Range) -> None:
         self.write(f'{self._function}:RANG {self.RANGES[value]}')
 
     @property
-    def rate(self):
+    def rate(self) -> str:
         return self.query(f'{self._function}:NPLC?')
 
     @rate.setter
-    def rate(self, value: dmm.Rate):
+    def rate(self, value: dmm.Rate) -> None:
         self.write(f'{self._function}:NPLC {self.RATES[value]}')
 
     @property
-    def trigger_source(self):
+    def trigger_source(self) -> str:
         return self.query('TRIG:SOUR?')
 
     @trigger_source.setter
-    def trigger_source(self, value: dmm.TriggerSource):
+    def trigger_source(self, value: dmm.TriggerSource) -> None:
         self.write(f'TRIG:SOUR "{value}"')
 
-    def remote(self):
+    def remote(self) -> None:
         self.write('SYST:REM')
 
-    def return_to_local(self):
+    def return_to_local(self) -> None:
         self.write('SYST:LOC')
 
-    def read_val(self):
-        return self.query('READ?')
+    def read_val(self) -> float:
+        return float(self.query('READ?'))
 
-    def trigger(self):
+    def trigger(self) -> None:
         self.write('*TRG')
 
-    def measure(self):
+    def measure(self) -> float:
         if self._trigger_measurement:
             self.trigger()
         return self.read_val()
 
-    def close(self):
+    def close(self) -> None:
         self.return_to_local()
         super().close()

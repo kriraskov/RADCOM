@@ -19,9 +19,10 @@ TriggerSource = Literal['internal', 'external', 'bus']
 
 
 class Multimeter(ABC, Instrument):
+    """Multimeter base class."""
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: int = 2000, write_termination: str = None,
-                 read_termination: str = None, echo: bool = False):
+                 read_termination: str = None, echo: bool = False) -> None:
         super().__init__(resource_name, query_delay, timeout,
                          write_termination, read_termination, echo)
         self._trigger_measurement = False
@@ -31,67 +32,77 @@ class Multimeter(ABC, Instrument):
 
     @property
     @abstractmethod
-    def function(self):
+    def function(self) -> str:
+        """Operation mode of the multimeter."""
         ...
 
     @function.setter
     @abstractmethod
-    def function(self, value: Function):
+    def function(self, value: Function) -> None:
         ...
 
     @property
     @abstractmethod
-    def range(self):
+    def range(self) -> str:
+        """Measurement range."""
         ...
 
     @range.setter
     @abstractmethod
-    def range(self, value: Range):
+    def range(self, value: Range) -> None:
         ...
 
     @property
     @abstractmethod
-    def rate(self):
+    def rate(self) -> str:
+        """Measurement rate."""
         ...
 
     @rate.setter
     @abstractmethod
-    def rate(self, value: Rate):
+    def rate(self, value: Rate) -> None:
         ...
 
     @property
     @abstractmethod
-    def trigger_source(self):
+    def trigger_source(self) -> str:
+        """Trigger source."""
         ...
 
     @trigger_source.setter
     @abstractmethod
-    def trigger_source(self, value: TriggerSource):
+    def trigger_source(self, value: TriggerSource) -> None:
         ...
 
     @abstractmethod
-    def remote(self):
+    def remote(self) -> str:
+        """Configure the multimeter for remote operation."""
         ...
 
     @abstractmethod
-    def return_to_local(self):
+    def return_to_local(self) -> None:
+        """Configure the multimeter for local operation."""
         ...
 
     @abstractmethod
-    def read_val(self):
+    def read_val(self) -> float:
+        """Read the measured value."""
         ...
 
-    def measure(self):
+    def measure(self) -> float:
+        """Trigger a measurement and read the results."""
         if self._trigger_measurement:
             self.trigger()
         return self.read_val()
 
-    def close(self):
+    def close(self) -> None:
+        """Return to local and close the resource."""
         self.return_to_local()
         super().close()
 
     def setup(self, func: Function, rate: Rate, range_: Range,
-              trigger_type: TriggerSource, echo: bool = False):
+              trigger_type: TriggerSource, echo: bool = False) -> None:
+        """Set up the multimeter."""
         self.echo = echo
         self.function = func
         self.rate = rate
