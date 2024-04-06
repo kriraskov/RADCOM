@@ -2,7 +2,8 @@ from .instrument import Instrument, Channel
 from abc import ABC, abstractmethod
 
 
-class SignalGenrator(ABC, Instrument):
+class SignalGenerator(ABC, Instrument):
+    """Base class for signals generators."""
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: int = 2000, write_termination: str = None,
                  read_termination: str = None, echo: bool = False):
@@ -14,9 +15,11 @@ class SignalGenrator(ABC, Instrument):
         
 
 class OutputChannel(ABC, Channel):
+    """An output channel of the signal generator."""
     @property
     @abstractmethod
     def enable(self):
+        """Enable the channel."""
         ...
     
     @enable.setter
@@ -27,6 +30,7 @@ class OutputChannel(ABC, Channel):
     @property
     @abstractmethod
     def frequency(self):
+        """Output frequency of the signal."""
         ...
     
     @frequency.setter
@@ -37,6 +41,7 @@ class OutputChannel(ABC, Channel):
     @property
     @abstractmethod
     def power(self):
+        """Output power in dBm of the signal."""
         ...
     
     @power.setter
