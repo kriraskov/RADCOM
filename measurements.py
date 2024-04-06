@@ -1,7 +1,7 @@
 import time
 from dac import DAC
-from visa_instrument import HP34401A, MS464xB
-import csv
+from instruments.multimeters.hp34401a import HP34401A
+from instruments.network_analyzers.ms464xb import MS464xB
 
 
 def sweep_dac_volt(dmm_resource, dac_port, dac_channel, sweep_volt,
@@ -13,7 +13,7 @@ def sweep_dac_volt(dmm_resource, dac_port, dac_channel, sweep_volt,
     time.sleep(1)       # Make sure all channels are ready
     for volt in sweep_volt:
         dac.set_volt(dac_channel, volt)
-        readings.append(dmm.measure())
+        readings.append(dmm.read_val())
     dac.close()
     return readings
 
