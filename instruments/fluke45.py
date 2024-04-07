@@ -25,6 +25,7 @@ class Fluke45(dmm.Multimeter):
                  read_termination: str = '\r\n', echo: bool = False) -> None:
         super().__init__(resource_name, query_delay, timeout,
                          write_termination, read_termination, echo)
+        self._trigger_source = 0
 
     @property
     def function(self) -> str:
@@ -72,6 +73,11 @@ class Fluke45(dmm.Multimeter):
     @trigger_source.setter
     def trigger_source(self, value: dmm.TriggerSource) -> None:
         self.write(f'TRIGGER {self.TRIGGER_TYPES[value]}')
+        self._trigger_source = value
+
+    @property
+    def trigger_measurement(self) -> bool:
+        return self._trigger_source == 2 or self._trigger_source == 3
 
     def remote(self) -> None:
         pass

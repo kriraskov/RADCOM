@@ -10,7 +10,7 @@ class HP34401AD(dmm.Multimeter):
 
     RATES = {'min': 0.02, 'slow': 0.2, 'medium': 1, 'fast': 10, 'max': 100}
 
-    TRIGGER_TYPES = {'internal': 'IMM', 'external': 'EXT', 'bus': 'bus'}
+    TRIGGER_TYPES = {'internal': 'IMM', 'external': 'EXT', 'bus': 'BUS'}
 
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: int = 2000, write_termination: str = '\n',
@@ -18,6 +18,7 @@ class HP34401AD(dmm.Multimeter):
         super().__init__(resource_name, query_delay, timeout,
                          write_termination, read_termination, echo)
         self._function = None
+        self._trigger_source = None
 
     @property
     def function(self) -> str:
@@ -51,6 +52,11 @@ class HP34401AD(dmm.Multimeter):
     @trigger_source.setter
     def trigger_source(self, value: dmm.TriggerSource) -> None:
         self.write(f'TRIG:SOUR "{value}"')
+        self._trigger_source = value
+
+    @property
+    def trigger_measurement(self) -> bool:
+        return self._trigger_source == 'BUS'
 
     def remote(self) -> None:
         self.write('SYST:REM')
@@ -63,12 +69,3 @@ class HP34401AD(dmm.Multimeter):
 
     def trigger(self) -> None:
         self.write('*TRG')
-
-    def measure(self) -> float:
-        if self._trigger_measurement:
-            self.trigger()
-        return self.read_val()
-
-    def close(self) -> None:
-        self.return_to_local()
-        super().close()
