@@ -131,7 +131,7 @@ class MS464xB(vna.NetworkAnalyzer):
 
     def return_to_local(self) -> None:
         print('RTL')
-        self.write('RTL')
+        self.resource.write('RTL')
 
     def measure(self, x: float, marker_number: int = 1, trace: int = 1,
                 fmt: ParameterFormat = 'lin_phase') -> float:
