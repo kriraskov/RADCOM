@@ -25,7 +25,6 @@ class Multimeter(ABC, Instrument):
                  read_termination: str = None, echo: bool = False) -> None:
         super().__init__(resource_name, query_delay, timeout,
                          write_termination, read_termination, echo)
-        self._trigger_measurement = False
         self.reset()
         self.clear()
         self.remote()

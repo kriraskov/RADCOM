@@ -1,10 +1,9 @@
 from .instrument import Instrument, Channel
 from abc import ABC, abstractmethod
-from typing import Literal
-import pyvisa
 
 
 class NetworkAnalyzer(ABC, Instrument):
+    """Network analyzer base class."""
     @property
     @abstractmethod
     def sweep_type(self) -> str:
@@ -120,8 +119,8 @@ class NetworkAnalyzer(ABC, Instrument):
         super().close()
 
     def setup_freq_sweep(self, sweep_length: int, start: float = None,
-                          stop: float = None, center: float = None,
-                          span: float = None, sweep_type: str = None) -> None:
+                         stop: float = None, center: float = None,
+                         span: float = None, sweep_type: str = None) -> None:
         self.sweep_type = sweep_type
         self.frequency_sweep_length = sweep_length
         if (start and stop) and not (center or span):

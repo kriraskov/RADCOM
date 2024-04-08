@@ -11,6 +11,14 @@ ParameterFormat = Literal['lin_phase', 'log_phase', 'real_imag']
 
 
 class MS464xB(vna.NetworkAnalyzer):
+    """Anritsu VectorStar MS464xB network analyzer.
+
+    From the datasheet: "Each VNA channel is like a separate VNA."
+    Hence, each `MS464xB` object represents a single VNA channel.
+
+    Parameters:
+        P1, P2: Ports 1 and 2 of the instrument.
+    """
     PARAM_FORMATS = {'lin_phase': 'LINPH', 'log_phase': 'LOGHP',
                      'real_imag': 'REIM'}
 
