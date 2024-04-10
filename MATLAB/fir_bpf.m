@@ -2,7 +2,7 @@ clear
 
 dB = @(x) 10^(x / 10);
 show_filter = true;
-show_plot = true;           % Don't.
+show_plot = false;           % Don't.
 write_file = false;
 
 %% Filter Parameters
