@@ -1,12 +1,26 @@
 %% Init
 clear
 
-files = ["240408_N6700B_amplitude+phase_readings_Qminus_filterBW_30kHz_sweep_0-2000mV_10mV_avgTime_750ms_LO_11dBm3_11GHz666_1Mpts.csv", ...
-    "240408_N6700B_amplitude+phase_readings_-6dB_Qminus_filterBW_30kHz_sweep_0-2000mV_10mV_avgTime_750ms_LO_11dBm3_11GHz666_1Mpts.csv", ...
-    "240408_N6700B_amplitude+phase_readings_-12dB_Qminus_filterBW_30kHz_sweep_0-2000mV_10mV_avgTime_750ms_LO_11dBm3_11GHz666_1Mpts.csv"];
+% File attributes
+basedir = "240409_back_to_back\240409\";
+atten = [0 0 6];
+line = "Q-";
+n_pts = 501;
+
+% Data structures
+control = zeros(n_pts, length(atten));
+amplitude = zeros(n_pts, length(atten));
+phase = zeros(n_pts, length(atten));
+Re = zeros(n_pts, length(atten));
+Im = zeros(n_pts, length(atten));
+Re_mean = zeros(1, length(atten));
+Im_mean = zeros(1, length(atten));
+
+%% Read
+files = dir(strcat(basedir, "*", line, "*.csv"));
 
 for i = 1:3
-    M = readmatrix(files(i));
+    M = readmatrix(strcat(basedir, files(i).name));
     control(:, i) = M(:, 1);
     amplitude(:, i) = M(:, 2);
     phase(:, i) = M(:, 3);
@@ -15,13 +29,6 @@ for i = 1:3
     
     Re_mean(:, i) = mean(Re(:, i));
     Im_mean(:, i) = mean(Im(:, i));
-    
-    
-    [~, i45(i)] = min(abs(phase(:, i) - 45));
-    [~, i135(i)] = min(abs(phase(:, i) - 135));
-    a45(i) = amplitude(i45(i), i);
-    a135(i) = amplitude(i135(i), i);
-    disp(["q =" num2str(a135(i) / a45(i))]);
 end
 
 %% Plot
@@ -32,9 +39,10 @@ t = tiledlayout(2, 1);
 
 nexttile
 plot(control, amplitude)
-title("Q- output")
+title(strcat(line, " output"))
 legend(["0dB" "-6dB" "-12dB"])
 grid on
+xlim([0 5])
 ylabel("Amplitude (Volts)")
 
 nexttile
@@ -42,9 +50,10 @@ plot(control, phase)
 grid on
 xlabel("Control Voltage (Volts)")
 ylabel("Phase (Degrees)")
+xlim([0 5])
 
 figure
-title("Q- output")
+title(strcat(line, " output"))
 hold on
 scatter(Re, Im)
 scatter(Re_mean, Im_mean)
