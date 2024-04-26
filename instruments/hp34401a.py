@@ -1,7 +1,7 @@
 from .base import multimeter as dmm
 
 
-class HP34401AD(dmm.Multimeter):
+class HP34401A(dmm.Multimeter):
     """HP/Agilent 34401A Multimeter."""
     RANGES = {'100mV': 0.1, '1V': 1, '10V': 10, '100V': 100, '750V': 750,
               '1kV': 1000, '100Ohm': 100, '1kOhm': 1000, '10kOhm': 1e4,
