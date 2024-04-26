@@ -6,7 +6,8 @@ class Instrument(PyVisaBase):
     """Base class for instruments."""
     def __init__(self, resource_name: str = None, query_delay: float = 0.,
                  timeout: int = 2000, write_termination: str = None,
-                 read_termination: str = None, echo: bool = False):
+                 read_termination: str = None, echo: bool = False,
+                 name: str = None) -> None:
         """Instrument constructor.
 
         Initialize the resources needed to remotely control an
@@ -22,16 +23,12 @@ class Instrument(PyVisaBase):
             read_termination (str): Termination character of read
                 strings.
             echo (bool): Echo commands.
+            name (str): Name to show when printing commands.
         """
-        super().__init__(None, echo)
+        super().__init__(None, echo, name)
         self.open_resource(resource_name, query_delay, timeout,
                            write_termination, read_termination)
         print(self.identity)
-
-    @property
-    def complete(self) -> str:
-        """Value of the operation-complete register."""
-        return self.query('*OPC?')
 
     @property
     def status(self) -> str:
@@ -69,8 +66,7 @@ class Instrument(PyVisaBase):
     def write(self, cmd: str) -> None:
         """Write command to instrument and await execution."""
         super().write(cmd)
-        while not self.complete:
-            pass
+        super().write('*WAI')
 
     def trigger(self) -> None:
         """Trigger the instrument for a measurement."""
@@ -127,11 +123,4 @@ class Channel(PyVisaBase):
     def write(self, cmd: str) -> None:
         """Write command to instrument and await execution."""
         super().write(cmd)
-        while not self.complete:
-            pass
-
-    @property
-    def complete(self) -> str:
-        """Value of the operation-complete register."""
-        return self.query('*OPC?')
-        
+        super().write('*WAI')

@@ -22,9 +22,10 @@ class Multimeter(ABC, Instrument):
     """Multimeter base class."""
     def __init__(self, resource_name: str, query_delay: float = 0.,
                  timeout: int = 2000, write_termination: str = None,
-                 read_termination: str = None, echo: bool = False) -> None:
+                 read_termination: str = None, echo: bool = False,
+                 name: str = None) -> None:
         super().__init__(resource_name, query_delay, timeout,
-                         write_termination, read_termination, echo)
+                         write_termination, read_termination, echo, name)
         self.reset()
         self.clear()
         self.remote()

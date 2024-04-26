@@ -14,11 +14,13 @@ class PyVisaBase:
         resource (pyvisa.Resource): Reference to the PyVisa resource
             object that handles a specific resource.
         echo (bool): Echo commands when written to the instrument.
+        name (str): Name to show when printing commands.
     """
     def __init__(self, resource: pyvisa.resources.Resource = None,
-                 echo: bool = False):
+                 echo: bool = False, name: str = None):
         self.resource = resource
         self.echo = echo
+        self.name = name if name is not None else self.__class__.__name__
 
     @property
     def read_termination(self) -> str:
@@ -82,7 +84,7 @@ class PyVisaBase:
     def write(self, cmd: str) -> None:
         """Write a command to the instrument."""
         if self.echo:
-            print(f'{self.__class__.__name__}: {cmd}')
+            print(f'{self.name}: {cmd}')
         self.resource.write(cmd)
 
     def read(self) -> str:
@@ -92,7 +94,7 @@ class PyVisaBase:
     def query(self, cmd: str) -> str:
         """Consecutive write and read of a query command."""
         if self.echo:
-            print(f'{self.__class__.__name__}: {cmd}')
+            print(f'{self.name}: {cmd}')
         return self.resource.query(cmd)
 
     def close(self) -> None:
