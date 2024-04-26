@@ -116,8 +116,8 @@ class Channel(PyVisaBase):
         echo (bool): Echo commands.
     """
     def __init__(self, number: int, resource: pyvisa.resources.Resource,
-                 echo: bool = False):
-        super().__init__(resource, echo)
+                 echo: bool = False, name: str = None):
+        super().__init__(resource, echo, name)
         self.number = number
         
     def write(self, cmd: str) -> None:
